@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
+// CREATE ORDER
 router.post("/", (req, res) => {
   const {
     user_name,
@@ -10,12 +11,42 @@ router.post("/", (req, res) => {
     quantity,
     total_price,
     payment_method,
+    address,
+    city,
+    pinCode,
   } = req.body;
+
+  if (
+    !user_name ||
+    !email ||
+    !product_name ||
+    !quantity ||
+    !total_price ||
+    !payment_method ||
+    !address ||
+    !city ||
+    !pinCode
+  ) {
+    return res.status(400).json({
+      message: "Please provide all order details",
+    });
+  }
 
   const sql = `
     INSERT INTO orders
-    (user_name, email, product_name, quantity, total_price, payment_method, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (
+      user_name,
+      email,
+      product_name,
+      quantity,
+      total_price,
+      payment_method,
+      address,
+      city,
+      pinCode,
+      status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
@@ -27,17 +58,22 @@ router.post("/", (req, res) => {
       quantity,
       total_price,
       payment_method,
+      address,
+      city,
+      pinCode,
       "Pending",
     ],
     (err, result) => {
       if (err) {
-        console.log(err);
+        console.error("❌ ORDER DATABASE ERROR:", err);
+
         return res.status(500).json({
           message: "Failed to create order",
+          error: err.message,
         });
       }
 
-      res.json({
+      res.status(201).json({
         message: "Order Created Successfully",
         orderId: result.insertId,
       });
@@ -45,14 +81,17 @@ router.post("/", (req, res) => {
   );
 });
 
+// GET ALL ORDERS
 router.get("/", (req, res) => {
   const sql = "SELECT * FROM orders ORDER BY id DESC";
 
   db.query(sql, (err, result) => {
     if (err) {
-      console.log(err);
+      console.error("❌ ORDER DATABASE ERROR:", err);
+
       return res.status(500).json({
         message: "Database Error",
+        error: err.message,
       });
     }
 
@@ -60,6 +99,7 @@ router.get("/", (req, res) => {
   });
 });
 
+// GET SINGLE ORDER
 router.get("/:id", (req, res) => {
   const { id } = req.params;
 
@@ -68,7 +108,8 @@ router.get("/:id", (req, res) => {
     [id],
     (err, result) => {
       if (err) {
-        console.log(err);
+        console.error(err);
+
         return res.status(500).json({
           message: "Database Error",
         });
@@ -85,6 +126,7 @@ router.get("/:id", (req, res) => {
   );
 });
 
+// UPDATE ORDER STATUS
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -109,7 +151,8 @@ router.put("/:id", (req, res) => {
     [status, id],
     (err, result) => {
       if (err) {
-        console.log(err);
+        console.error(err);
+
         return res.status(500).json({
           message: "Failed to Update Order",
         });
@@ -128,6 +171,7 @@ router.put("/:id", (req, res) => {
   );
 });
 
+// DELETE ORDER
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
 
@@ -136,7 +180,8 @@ router.delete("/:id", (req, res) => {
     [id],
     (err, result) => {
       if (err) {
-        console.log(err);
+        console.error(err);
+
         return res.status(500).json({
           message: "Failed to Delete Order",
         });
